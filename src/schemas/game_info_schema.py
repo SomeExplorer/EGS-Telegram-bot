@@ -10,6 +10,7 @@ class ImageType(str, Enum):
     THUMBNAIL = "Thumbnail"
     HERO_CAROUSEL_VIDEO = "heroCarouselVideo"
     FEATURED_MEDIA = "featuredMedia"
+    GALLERY_IMAGE = "GalleryImage"
 
 
 class KeyImageSchema(BaseModel):
@@ -56,7 +57,7 @@ class PromotionsSchema(BaseModel):
     promotional_offers: list[PromotionalOffersListSchema] | None = Field(
         alias="promotionalOffers"
     )
-    upcomingPromotionalOffers: list[PromotionalOffersListSchema] | None = Field(
+    upcoming_promotional_offers: list[PromotionalOffersListSchema] | None = Field(
         alias="upcomingPromotionalOffers"
     )
 
