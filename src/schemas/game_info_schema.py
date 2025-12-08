@@ -28,6 +28,10 @@ class PageSchema(BaseModel):
     page_type: str = Field(alias="pageType")
 
 
+class CatalogNsSchema(BaseModel):
+    mappings: list[PageSchema]
+
+
 class TotalPriceSchema(BaseModel):
     discount_price: int = Field(ge=0, alias="discountPrice")
     original_price: int = Field(gt=0, alias="originalPrice")
@@ -69,5 +73,6 @@ class GameInfoSchema(BaseModel):
     key_images: list[KeyImageSchema] = Field(alias="keyImages")
     seller: SellerSchema
     offer_mappings: list[PageSchema] = Field(alias="offerMappings")
+    catalog_ns: CatalogNsSchema = Field(alias="catalogNs")
     price: PriceSchema
     promotions: PromotionsSchema | None

@@ -1,15 +1,21 @@
-from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.events import EVENT_JOB_ERROR
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
+
+from src.notifications.database import Database
 
 
 def event_listener(event):
-    print(f"Event received: {event}")
     if event.exception:
         print(event.exception)
+    else:
+        if event.job_id != "#0":
+            Database.insert_notification(game_id=event.job_id, completed_at=datetime.now())
 
 
-job_stores = {"default": SQLAlchemyJobStore(url="sqlite:///jobs.sqlite")}
+job_stores = {"default": SQLAlchemyJobStore(url="sqlite:///notifications.sqlite")}
 job_defaults = {"coalesce": False, "max_instances": 1}
-scheduler = BackgroundScheduler(jobstores=job_stores, job_defaults=job_defaults)
-scheduler.add_listener(event_listener, EVENT_JOB_ERROR)
+scheduler = AsyncIOScheduler(jobstores=job_stores, job_defaults=job_defaults)
+scheduler.add_listener(event_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
