@@ -3,7 +3,7 @@ from datetime import timezone, timedelta
 
 from apscheduler.schedulers.base import STATE_PAUSED
 
-from src.bots.base_bot import BaseBot
+from src.bot.base_bot import BaseBot
 from src.schemas.game_info_schema import GameInfoSchema
 from src.notifications.epic_games_store_api import get_free_games
 from src.notifications.scheduler import scheduler

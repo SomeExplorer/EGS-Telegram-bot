@@ -11,7 +11,7 @@ from src.notifications.notificator import Notificator
 from src.notifications.scheduler import scheduler
 from src.notifications.models import Base, SentNotificationsModel
 from src.notifications.database import sync_engine
-from src.bots.base_bot import BaseBot
+from src.bot.base_bot import BaseBot
 
 TIME_DELTA = 5
 

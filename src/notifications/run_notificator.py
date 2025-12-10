@@ -1,6 +1,6 @@
 import asyncio
 
-from src.bots.telegram_bot import TelegramBot
+from src.bot.telegram_bot import TelegramBot
 from src.notifications.notificator import Notificator
 
 
