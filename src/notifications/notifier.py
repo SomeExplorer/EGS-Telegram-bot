@@ -5,7 +5,7 @@ from apscheduler.schedulers.base import STATE_PAUSED
 
 from src.bot.base_bot import BaseBot
 from src.logger import logger
-from src.schemas.game_info_schema import GameInfoSchema
+from src.schemas.game_info_schema import GameInfoSchema, PromotionalOfferSchema
 from src.notifications.constants import UPDATING_TASK_ID
 from src.notifications.database import Database
 from src.notifications.epic_games_store_api import get_free_games
@@ -43,24 +43,34 @@ class Notifier:
         if self._already_notified(game):
             return
 
-        if game.promotions:
-            if game.promotions.promotional_offers:
-                start_date = game.promotions.promotional_offers[0].promotional_offers[0].start_date
-                end_date = game.promotions.promotional_offers[0].promotional_offers[0].end_date
-            else:
-                start_date = game.promotions.upcoming_promotional_offers[0].promotional_offers[0].start_date
-                end_date = game.promotions.upcoming_promotional_offers[0].promotional_offers[0].end_date
+        def find_free_offer(offers: list) -> PromotionalOfferSchema | None:
+            return next(filter(lambda offer: offer.discount_setting.discount_percentage == 0, offers), None)
 
-            scheduler.add_job(
-                func=self._notify_bot,
-                args=(game,),
-                id=game.id,
-                name=game.title,
-                run_date=start_date,
-                misfire_grace_time=int((end_date - start_date - timedelta(hours=1)).total_seconds()),
-                replace_existing=True,
-            )
-            logger.info(f"{scheduler.get_job(game.id)} добавлена в scheduler")
+        if game.promotions:
+            if game.promotions.promotional_offers and (
+                free_offer := find_free_offer(game.promotions.promotional_offers[0].promotional_offers)
+            ):
+                start_date = free_offer.start_date
+                end_date = free_offer.end_date
+            elif game.promotions.upcoming_promotional_offers and (
+                free_offer := find_free_offer(game.promotions.upcoming_promotional_offers[0].promotional_offers)
+            ):
+                start_date = free_offer.start_date
+                end_date = free_offer.end_date
+            else:
+                start_date = end_date = None
+
+            if start_date:
+                scheduler.add_job(
+                    func=self._notify_bot,
+                    args=(game,),
+                    id=game.id,
+                    name=game.title,
+                    run_date=start_date,
+                    misfire_grace_time=int((end_date - start_date - timedelta(hours=1)).total_seconds()),
+                    replace_existing=True,
+                )
+                logger.info(f"{scheduler.get_job(game.id)} добавлена в scheduler")
 
     @staticmethod
     def _already_notified(game: GameInfoSchema) -> bool:

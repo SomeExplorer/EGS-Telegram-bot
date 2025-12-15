@@ -64,7 +64,7 @@ class TestNotificator:
     @pytest.mark.usefixtures("clear_jobs")
     @pytest.mark.parametrize("test_games", [[GameInfoSchema(**test_game_json)], None])
     def test_check_store_update(self, test_games: list | None, mocker: MockerFixture):
-        mocker.patch("src.notifications.notificator.get_free_games", return_value=test_games)
+        mocker.patch("src.notifications.notifier.get_free_games", return_value=test_games)
 
         jobs_before_update = scheduler.get_jobs()
         self.notificator._check_store_update()
@@ -87,9 +87,9 @@ class TestNotificator:
     @pytest.mark.usefixtures("clear_jobs")
     @pytest.mark.parametrize("test_games", [[GameInfoSchema(**test_game_json)]])
     async def test_run(self, test_games: list | None, mocker: MockerFixture):
-        mocker.patch("src.notifications.notificator.get_free_games", return_value=test_games)
+        mocker.patch("src.notifications.notifier.get_free_games", return_value=test_games)
         mock_notify_users = mocker.patch(
-            "tests.test_notifications.test_notificator.Bot.notify_users", new_callable=AsyncMock
+            "tests.test_notifications.test_notifier.Bot.notify_users", new_callable=AsyncMock
         )
 
         assert mock_notify_users is not None
