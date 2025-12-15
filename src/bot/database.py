@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.schemas.users_schema import UsersSchema
 from src.bot.models import Base, UsersModel
+from src.logger import logger
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 db_path = os.path.join(base_dir, "bot", "telegram_db.sqlite")
@@ -22,6 +23,7 @@ class Database:
             if not session.query(UsersModel).filter_by(user_id=db_user.user_id).first():
                 session.add(db_user)
                 session.commit()
+                logger.info(f"INSERT {db_user} INTO {UsersModel.__tablename__}")
 
     @classmethod
     def delete_user_by_id(cls, user_id: int) -> None:
@@ -30,6 +32,7 @@ class Database:
             if user_to_delete:
                 session.delete(user_to_delete)
                 session.commit()
+                logger.info(f"DELETE {user_to_delete} FROM {UsersModel.__tablename__}")
 
     @classmethod
     def select_user_ids(cls) -> list[int]:

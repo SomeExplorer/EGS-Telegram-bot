@@ -4,19 +4,22 @@ from datetime import timezone, timedelta
 from apscheduler.schedulers.base import STATE_PAUSED
 
 from src.bot.base_bot import BaseBot
+from src.logger import logger
 from src.schemas.game_info_schema import GameInfoSchema
+from src.notifications.constants import UPDATING_TASK_ID
+from src.notifications.database import Database
 from src.notifications.epic_games_store_api import get_free_games
 from src.notifications.scheduler import scheduler
-from src.notifications.database import Database
 
 
-class Notificator:
+class Notifier:
     def __init__(self, bot: BaseBot):
         self.bot = bot
         self.running = False
 
     async def run(self) -> None:
         scheduler.resume() if scheduler.state == STATE_PAUSED else scheduler.start()
+        logger.info("scheduler запущен")
         self.running = True
 
         self._check_store_update()
@@ -26,6 +29,7 @@ class Notificator:
             await asyncio.sleep(0.5)
 
         scheduler.pause()
+        logger.info("scheduler приостановлен")
 
     def _check_store_update(self) -> None:
         free_games = get_free_games()
@@ -56,23 +60,24 @@ class Notificator:
                 misfire_grace_time=int((end_date - start_date - timedelta(hours=1)).total_seconds()),
                 replace_existing=True,
             )
+            logger.info(f"{scheduler.get_job(game.id)} добавлена в scheduler")
 
     @staticmethod
     def _already_notified(game: GameInfoSchema) -> bool:
         return game.id in Database.select_last_30_days_games_ids()
 
     async def _notify_bot(self, game: GameInfoSchema) -> None:
+        logger.info(f"{self.__class__.__name__} вызывает оповещение об игре {game.title} (id={game.id})")
         await self.bot.notify_users(game)
 
     def _add_updating_task(self) -> None:
-        job_id = "#0"
-        if not scheduler.get_job(job_id):
+        if not scheduler.get_job(UPDATING_TASK_ID):
             scheduler.add_job(
                 func=self._check_store_update,
                 trigger="interval",
-                days=1,
+                hours=1,
                 timezone=timezone.utc,
-                id=job_id,
+                id=UPDATING_TASK_ID,
                 name="updating",
                 replace_existing=True,
             )

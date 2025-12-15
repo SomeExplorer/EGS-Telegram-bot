@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.formatting import as_section, Text, Bold, Url, as_list, Underline
-from aiogram.exceptions import TelegramRetryAfter, TelegramServerError
+from aiogram.exceptions import TelegramRetryAfter, TelegramServerError, TelegramNotFound
 from dotenv import load_dotenv
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
@@ -18,6 +18,7 @@ from src.schemas.users_schema import UsersSchema
 from src.schemas.game_info_schema import GameInfoSchema, ImageType
 from src.bot.database import Database
 from src.bot.base_bot import BaseBot
+from src.logger import logger
 
 load_dotenv()
 TOKEN = getenv("BOT_TOKEN")
@@ -45,6 +46,7 @@ class TelegramBot(BaseBot):
 
     async def notify_users(self, game: GameInfoSchema) -> None:
         semaphore = asyncio.Semaphore(20)
+        successes = 0
 
         @retry(
             stop=stop_after_attempt(7),
@@ -52,13 +54,25 @@ class TelegramBot(BaseBot):
             retry=retry_if_exception_type((TelegramRetryAfter, TelegramServerError)),
         )
         async def send_message(user_id: int, content: MessageContent) -> None:
+            nonlocal successes
             async with semaphore:
-                await self.__bot.send_photo(**content.text.as_caption_kwargs(), chat_id=user_id, photo=content.img_url)
+                try:
+                    await self.__bot.send_photo(
+                        **content.text.as_caption_kwargs(),
+                        chat_id=user_id,
+                        photo=content.img_url
+                    )
+                    successes += 1
+                except TelegramNotFound as e:
+                    logger.error("TelegramNotFound", exc_info=True)
+                    if "user not found" in str(e).lower():
+                        Database.delete_user_by_id(user_id)
 
         message_content = self.get_message_content(game)
         user_ids = Database.select_user_ids()
         tasks = [send_message(user_id, message_content) for user_id in user_ids]
         await asyncio.gather(*tasks)
+        logger.info(f"Telegram бот успешно оповестил {successes} пользователей об игре {game.title} (id={game.id})")
 
     @staticmethod
     def get_message_content(game: GameInfoSchema) -> MessageContent:

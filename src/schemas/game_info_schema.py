@@ -11,6 +11,8 @@ class ImageType(str, Enum):
     HERO_CAROUSEL_VIDEO = "heroCarouselVideo"
     FEATURED_MEDIA = "featuredMedia"
     GALLERY_IMAGE = "GalleryImage"
+    DIESEL_STORE_FRONT_WIDE = "DieselStoreFrontWide"
+    VAULT_CLOSED = "VaultClosed"
 
 
 class KeyImageSchema(BaseModel):
@@ -34,7 +36,7 @@ class CatalogNsSchema(BaseModel):
 
 class TotalPriceSchema(BaseModel):
     discount_price: int = Field(ge=0, alias="discountPrice")
-    original_price: int = Field(gt=0, alias="originalPrice")
+    original_price: int = Field(ge=0, alias="originalPrice")
     discount: int = Field(ge=0)
 
 

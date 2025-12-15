@@ -1,11 +1,12 @@
 import asyncio
 
+from src.logger import logger
 from src.bot.telegram_bot import TelegramBot
 
 
 async def main() -> None:
     telegram_bot = TelegramBot()
-    print("Telegram bot is running...")
+    logger.info("Запуск Telegram бота")
     await telegram_bot.start_polling()
 
 

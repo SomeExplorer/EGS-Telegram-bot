@@ -3,10 +3,11 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from src.logger import logger
 from src.notifications.models import Base, SentNotificationsModel
 
 
-sync_engine = create_engine(url="sqlite:///notifications.sqlite", echo=True)
+sync_engine = create_engine(url="sqlite:///notifications_db.sqlite", echo=False)
 sync_session = sessionmaker(sync_engine)
 Base.metadata.create_all(sync_engine)
 
@@ -18,6 +19,7 @@ class Database:
             notification = SentNotificationsModel(game_id=game_id, completed_at=completed_at)
             session.add(notification)
             session.commit()
+            logger.info(f"INSERT {notification} INTO {SentNotificationsModel.__tablename__}")
 
     @classmethod
     def select_last_30_days_games_ids(cls) -> list[str]:

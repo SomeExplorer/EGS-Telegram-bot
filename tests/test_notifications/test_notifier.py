@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 from apscheduler.schedulers.base import STATE_RUNNING, STATE_PAUSED
 
 from src.schemas.game_info_schema import GameInfoSchema
-from src.notifications.notificator import Notificator
+from src.notifications.notifier import Notifier
 from src.notifications.scheduler import scheduler
 from src.notifications.models import Base, SentNotificationsModel
 from src.notifications.database import sync_engine
@@ -59,7 +59,7 @@ def clear_jobs():
 
 
 class TestNotificator:
-    notificator = Notificator(Bot())
+    notificator = Notifier(Bot())
 
     @pytest.mark.usefixtures("clear_jobs")
     @pytest.mark.parametrize("test_games", [[GameInfoSchema(**test_game_json)], None])
