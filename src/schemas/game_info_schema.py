@@ -1,10 +1,10 @@
-from enum import Enum
-from typing import Union
+from enum import StrEnum
+from typing import Union, Any
 
 from pydantic import BaseModel, Field, AnyUrl, AwareDatetime, FutureDatetime
 
 
-class ImageType(str, Enum):
+class ImageType(StrEnum):
     OFFER_IMAGE_WIDE = "OfferImageWide"
     OFFER_IMAGE_TALL = "OfferImageTall"
     THUMBNAIL = "Thumbnail"
@@ -13,7 +13,11 @@ class ImageType(str, Enum):
     GALLERY_IMAGE = "GalleryImage"
     DIESEL_STORE_FRONT_WIDE = "DieselStoreFrontWide"
     VAULT_CLOSED = "VaultClosed"
+    UNKNOWN = "Unknown"
 
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        return cls.UNKNOWN
 
 class KeyImageSchema(BaseModel):
     type: ImageType
