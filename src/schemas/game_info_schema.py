@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Union, Any
 
-from pydantic import BaseModel, Field, AnyUrl, AwareDatetime, FutureDatetime
+from pydantic import BaseModel, Field, AnyUrl, AwareDatetime, FutureDatetime, computed_field
 
 
 class ImageType(StrEnum):
@@ -18,6 +18,7 @@ class ImageType(StrEnum):
     @classmethod
     def _missing_(cls, value: object) -> Any:
         return cls.UNKNOWN
+
 
 class KeyImageSchema(BaseModel):
     type: ImageType
@@ -64,12 +65,8 @@ class PromotionalOffersListSchema(BaseModel):
 
 
 class PromotionsSchema(BaseModel):
-    promotional_offers: list[PromotionalOffersListSchema] | None = Field(
-        alias="promotionalOffers"
-    )
-    upcoming_promotional_offers: list[PromotionalOffersListSchema] | None = Field(
-        alias="upcomingPromotionalOffers"
-    )
+    promotional_offers: list[PromotionalOffersListSchema] | None = Field(alias="promotionalOffers")
+    upcoming_promotional_offers: list[PromotionalOffersListSchema] | None = Field(alias="upcomingPromotionalOffers")
 
 
 class GameInfoSchema(BaseModel):
@@ -82,3 +79,38 @@ class GameInfoSchema(BaseModel):
     catalog_ns: CatalogNsSchema = Field(alias="catalogNs")
     price: PriceSchema
     promotions: PromotionsSchema | None
+
+    @computed_field
+    @property
+    def free_offer(self) -> PromotionalOfferSchema | None:
+        def find_free_offer(offers_list: PromotionalOffersListSchema) -> PromotionalOfferSchema | None:
+            for offer in offers_list.promotional_offers:
+                if (
+                    offer.discount_setting.discount_type == "PERCENTAGE"
+                    and offer.discount_setting.discount_percentage == 0
+                ):
+                    return offer
+            return None
+
+        if not self.promotions:
+            return None
+
+        if self.promotions.promotional_offers:
+            free_offer = find_free_offer(self.promotions.promotional_offers[0])
+            if free_offer:
+                return free_offer
+        if self.promotions.upcoming_promotional_offers:
+            free_offer = find_free_offer(self.promotions.upcoming_promotional_offers[0])
+            return free_offer
+
+        return None
+
+    @computed_field
+    @property
+    def wide_img_url(self) -> str | None:
+        try:
+            url = str(next(filter(lambda x: x.type == ImageType.OFFER_IMAGE_WIDE, self.key_images)).url)
+        except StopIteration:
+            return None
+        else:
+            return url
