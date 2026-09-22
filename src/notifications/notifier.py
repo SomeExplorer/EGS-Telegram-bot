@@ -5,6 +5,7 @@ from apscheduler.schedulers.base import STATE_PAUSED
 
 from src.bot.base_bot import BaseBot
 from src.logger import logger
+from src.config import settings
 from src.schemas.game_info_schema import GameInfoSchema, PromotionalOfferSchema
 from src.notifications.constants import UPDATING_TASK_ID
 from src.notifications.database import Database
@@ -32,7 +33,11 @@ class Notifier:
         logger.info("scheduler приостановлен")
 
     def _check_store_update(self) -> None:
-        free_games = get_free_games()
+        free_games = get_free_games(
+            locale=settings.locale,
+            country=settings.country,
+            allow_countries=settings.allow_countries,
+        )
         if not free_games:
             return
 

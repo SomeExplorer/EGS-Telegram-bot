@@ -7,7 +7,7 @@ from src.schemas.game_info_schema import GameInfoSchema
 from src.notifications.constants import BASE_API_URL
 
 
-def _get_store_data(locale: str = "ru", country: str = "RU", allow_countries: str = "RU") -> StoreSchema:
+def _get_store_data(locale: str, country: str, allow_countries: str) -> StoreSchema:
     api_uri = f"{BASE_API_URL}/freeGamesPromotions?locale={locale}&country={country}&allowCountries={allow_countries}"
 
     try:
@@ -31,7 +31,7 @@ def _get_store_data(locale: str = "ru", country: str = "RU", allow_countries: st
         raise e
 
 
-def get_free_games(locale: str = "ru", country: str = "RU", allow_countries: str = "RU") -> list[GameInfoSchema]:
+def get_free_games(locale: str, country: str, allow_countries: str) -> list[GameInfoSchema]:
     store_data = _get_store_data(locale, country, allow_countries)
     free_games = store_data.data.catalog.search_store.elements
     return free_games
