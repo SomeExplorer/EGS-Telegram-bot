@@ -5,9 +5,10 @@ from sqlalchemy.orm import sessionmaker
 
 from src.logger import logger
 from src.notifications.models import Base, SentNotificationsModel
+from src.notifications.config import notifier_settings
 
 
-sync_engine = create_engine(url="sqlite:///notifications_db.sqlite", echo=False)
+sync_engine = create_engine(url=f"sqlite:///{notifier_settings.db_path}", echo=False)
 sync_session = sessionmaker(sync_engine)
 Base.metadata.create_all(sync_engine)
 

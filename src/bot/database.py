@@ -1,16 +1,13 @@
-import os
-
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from src.schemas.users_schema import UsersSchema
 from src.bot.models import Base, UsersModel
+from src.bot.config import bot_settings
 from src.logger import logger
 
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-db_path = os.path.join(base_dir, "bot", "telegram_db.sqlite")
 
-sync_engine = create_engine(url=f"sqlite:///{db_path}", echo=False, pool_size=1, max_overflow=2)
+sync_engine = create_engine(url=f"sqlite:///{bot_settings.db_path}", echo=False, pool_size=1, max_overflow=2)
 sync_session = sessionmaker(sync_engine)
 Base.metadata.create_all(sync_engine)
 
