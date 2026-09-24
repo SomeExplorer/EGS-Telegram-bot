@@ -1,0 +1,22 @@
+services:
+  bot:
+    build: .
+    command: ["python", "-m", "src.bot.run_bot"]
+    env_file: .env
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+  notifier:
+    build: .
+    command: ["python", "-m", "src.notifications.run_notifier"]
+    env_file: .env
+    volumes:
+      - sqlite_data:/app/data
+    depends_on:
+      bot:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
