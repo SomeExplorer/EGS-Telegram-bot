@@ -5,7 +5,7 @@ Telegram-бот, который отправляет уведомления св
 
 Для выбора языка, региона и часового пояса необходимо изменить параметры в файле `src/config.py`.
 
-![Пример уведомления](.github/images/example_ru.png)![Пример уведомления](.github/images/example_en.png)
+![Пример уведомления](.github/images/example_ru.png)
 
 ## Технологический стэк
 `Python 3.12`, `Aiogram 3`, `APScheduler`, `SQLite`, `SQLAlchemy`, `Pydantic`
