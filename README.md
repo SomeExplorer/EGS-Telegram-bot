@@ -21,3 +21,7 @@ cp .env.example .env
 ```bash
 docker compose up --build
 ```
+
+## Список команд бота
+`/start` - запустить Telegram-бота  
+`/now` - получить список игр, доступных на данный момент 
