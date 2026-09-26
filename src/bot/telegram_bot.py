@@ -1,10 +1,10 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import namedtuple
 from os import getenv
 from zoneinfo import ZoneInfo
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.formatting import as_section, Bold, Url, as_list
@@ -17,6 +17,7 @@ from tenacity.retry import retry_if_exception_type
 
 from src.schemas.users_schema import UsersSchema
 from src.schemas.game_info_schema import GameInfoSchema
+from src.notifications.epic_games_store_api import get_free_games
 from src.bot.database import Database
 from src.bot.base_bot import BaseBot
 from src.bot.message_templates import LOCALES
@@ -28,22 +29,50 @@ load_dotenv()
 MESSAGES = LOCALES[global_settings.locale.lower()] if LOCALES.get(global_settings.locale) else LOCALES["en"]
 TOKEN = getenv("BOT_TOKEN")
 dp = Dispatcher()
+router = Router()
+dp.include_router(router)
 MessageContent = namedtuple("MessageContent", ["text", "img_url"])
 
 
 class TelegramBot(BaseBot):
     __bot = Bot(token=TOKEN)
+    __router = router
 
     async def start_polling(self) -> None:
+        self.__router.message.register(
+            self.__send_welcome_message,
+            Command("start")
+        )
+        self.__router.message.register(
+            self.__send_available_games,
+            Command("now")
+        )
+
         await dp.start_polling(self.__bot)
 
     @staticmethod
-    @dp.message(Command("start"))
     async def __send_welcome_message(message: Message) -> None:
         user = message.from_user
         Database.insert_user(UsersSchema.model_validate(user.__dict__))
         msg_text = MESSAGES.welcome_message.content.format(username=user.first_name)
         await message.answer(msg_text)
+
+    async def __send_available_games(self, message: Message) -> None:
+        free_games = get_free_games(
+            locale=global_settings.locale,
+            country=global_settings.country,
+            allow_countries=global_settings.allow_countries,
+        )
+        for free_game in free_games:
+            free_offer = free_game.free_offer
+            if free_offer:
+                if free_offer.start_date <= datetime.now(timezone.utc) <= free_offer.end_date:
+                    message_content = self._get_game_info_message_content(free_game)
+                    await self.__bot.send_photo(
+                        **message_content.text.as_caption_kwargs(),
+                        chat_id=message.from_user.id,
+                        photo=message_content.img_url
+                    )
 
     async def notify_users(self, game: GameInfoSchema) -> None:
         semaphore = asyncio.Semaphore(20)
