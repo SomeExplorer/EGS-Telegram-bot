@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from collections import namedtuple
 from os import getenv
+from zoneinfo import ZoneInfo
 
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
@@ -77,7 +78,10 @@ class TelegramBot(BaseBot):
         img_url = game.wide_img_url
         title = Bold(MESSAGES.game_info_message.title.format(game_title=game.title))
         promotion_date = MESSAGES.game_info_message.promotion_date.format(
-            promotion_end_date=datetime.strftime(game.free_offer.end_date, "%d.%m.%Y %H:%M")
+            promotion_end_date=datetime.strftime(
+                game.free_offer.end_date.astimezone(tz=ZoneInfo(global_settings.timezone)),
+                format="%d.%m.%Y %H:%M"
+            )
         )
         description = MESSAGES.game_info_message.description.format(game_description=game.description)
         url = Url(
