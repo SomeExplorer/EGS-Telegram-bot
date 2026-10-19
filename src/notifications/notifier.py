@@ -4,7 +4,7 @@ from datetime import timezone, timedelta
 from apscheduler.schedulers.base import STATE_PAUSED
 
 from src.bot.base_bot import BaseBot
-from src.logger import logger
+from logging import getLogger
 from src.config import global_settings
 from src.schemas.game_info_schema import GameInfoSchema, PromotionalOfferSchema
 from src.notifications.constants import UPDATING_TASK_ID
@@ -13,14 +13,18 @@ from src.notifications.epic_games_store_api import get_free_games
 from src.notifications.scheduler import scheduler
 
 
+logger = getLogger("notifier")
+
+
 class Notifier:
     def __init__(self, bot: BaseBot):
         self.bot = bot
         self.running = False
 
     async def run(self) -> None:
+        logger.info("Notifier started")
+        logger.info("Starting scheduler...")
         scheduler.resume() if scheduler.state == STATE_PAUSED else scheduler.start()
-        logger.info("scheduler запущен")
         self.running = True
 
         self._check_store_update()
@@ -30,7 +34,7 @@ class Notifier:
             await asyncio.sleep(0.5)
 
         scheduler.pause()
-        logger.info("scheduler приостановлен")
+        logger.info("Scheduler paused")
 
     def _check_store_update(self) -> None:
         free_games = get_free_games(
@@ -75,14 +79,14 @@ class Notifier:
                     misfire_grace_time=int((end_date - start_date - timedelta(hours=1)).total_seconds()),
                     replace_existing=True,
                 )
-                logger.info(f"{scheduler.get_job(game.id)} добавлена в scheduler")
+                logger.info("%s was added to scheduler", scheduler.get_job(game.id))
 
     @staticmethod
     def _already_notified(game: GameInfoSchema) -> bool:
         return game.id in Database.select_last_30_days_games_ids()
 
     async def _notify_bot(self, game: GameInfoSchema) -> None:
-        logger.info(f"{self.__class__.__name__} вызывает оповещение об игре {game.title} (id={game.id})")
+        logger.info("Notifier is triggering a notification for the game %r (id=%s)", game.title, game.id)
         await self.bot.notify_users(game)
 
     def _add_updating_task(self) -> None:

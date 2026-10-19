@@ -1,13 +1,16 @@
 import asyncio
-
-from src.logger import logger
+import logging
+from src.logging_config import configure_logging
 from src.bot.telegram_bot import TelegramBot
 from src.notifications.notifier import Notifier
 
 
 async def main() -> None:
     notifier = Notifier(TelegramBot())
-    logger.info(f"Запуск {notifier.__class__.__name__}")
+    configure_logging()
+    logger = logging.getLogger("notifier")
+
+    logger.info(f"Starting notifier...")
     await notifier.run()
 
 

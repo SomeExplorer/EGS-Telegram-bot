@@ -1,14 +1,16 @@
 from datetime import datetime
+import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 
-from src.logger import logger
 from src.notifications.constants import UPDATING_TASK_ID
 from src.notifications.database import Database
 from src.notifications.config import notifier_settings
 
+
+logger = logging.getLogger("notifier")
 
 def event_listener(event):
     if event.exception:

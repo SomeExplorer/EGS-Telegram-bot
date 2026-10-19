@@ -1,10 +1,14 @@
+import logging
+
 from requests import Session, RequestException, HTTPError
 from pydantic import ValidationError
 
-from src.logger import logger
 from src.schemas.store_schema import StoreSchema
 from src.schemas.game_info_schema import GameInfoSchema
 from src.notifications.constants import BASE_API_URL
+
+
+logger = logging.getLogger("notifier")
 
 
 def _get_store_data(locale: str, country: str, allow_countries: str) -> StoreSchema:
@@ -21,13 +25,13 @@ def _get_store_data(locale: str, country: str, allow_countries: str) -> StoreSch
         try:
             validated_store_data = StoreSchema.model_validate(response.json())
         except ValidationError as e:
-            logger.exception("Store schema is not correct: %s", str(e))
+            logger.exception("Store schema is not correct: ", exc_info=True)
             raise e
         else:
             return validated_store_data
 
     except RequestException as e:
-        logger.exception("API request error: %s", str(e))
+        logger.exception("API request error: ", exc_info=True)
         raise e
 
 

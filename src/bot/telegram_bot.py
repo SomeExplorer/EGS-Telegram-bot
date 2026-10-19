@@ -3,12 +3,13 @@ from datetime import datetime, timezone
 from collections import namedtuple
 from os import getenv
 from zoneinfo import ZoneInfo
+import logging
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.formatting import as_section, Bold, Url, as_list
-from aiogram.exceptions import TelegramRetryAfter, TelegramServerError, TelegramNotFound
+from aiogram.exceptions import TelegramRetryAfter, TelegramServerError, TelegramNotFound, TelegramAPIError
 from dotenv import load_dotenv
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
@@ -23,9 +24,10 @@ from src.bot.base_bot import BaseBot
 from src.bot.message_templates import LOCALES
 from src.bot.constants import GAME_BASE_URL
 from src.config import global_settings
-from src.logger import logger
+
 
 load_dotenv()
+logger = logging.getLogger("telegram_bot")
 MESSAGES = LOCALES[global_settings.locale.lower()] if LOCALES.get(global_settings.locale) else LOCALES["en"]
 TOKEN = getenv("BOT_TOKEN")
 dp = Dispatcher()
@@ -48,7 +50,10 @@ class TelegramBot(BaseBot):
             Command("now")
         )
 
-        await dp.start_polling(self.__bot)
+        try:
+            await dp.start_polling(self.__bot)
+        except TelegramAPIError:
+            logger.exception("Unexpected Telegram API error: ", exc_info=True)
 
     @staticmethod
     async def __send_welcome_message(message: Message) -> None:
@@ -92,15 +97,15 @@ class TelegramBot(BaseBot):
                     )
                     successes += 1
                 except TelegramNotFound as e:
-                    logger.error("TelegramNotFound", exc_info=True)
                     if "user not found" in str(e).lower():
+                        logger.warning("User %s not found", user_id)
                         Database.delete_user_by_id(user_id)
 
         message_content = self._get_game_info_message_content(game)
         user_ids = Database.select_user_ids()
         tasks = [send_message(user_id, message_content) for user_id in user_ids]
         await asyncio.gather(*tasks)
-        logger.info(f"Telegram бот успешно оповестил {successes} пользователей об игре {game.title} (id={game.id})")
+        logger.info("Telegram bot successfully notified %s users about the game %r", successes, game.title)
 
     @staticmethod
     def _get_game_info_message_content(game: GameInfoSchema) -> MessageContent:
